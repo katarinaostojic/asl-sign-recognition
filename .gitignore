@@ -24,3 +24,7 @@ venv/
 .DS_Store
 Thumbs.db
 mlruns/
+
+# local helper files (not part of the project)
+_history/
+setup_git.bat

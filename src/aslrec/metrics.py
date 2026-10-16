@@ -79,3 +79,32 @@ def confidence_summary(probs: np.ndarray, y_true: np.ndarray) -> dict:
         "frac_wrong_below_0.9": float((conf[~correct] < 0.9).mean()) if (~correct).any() else float("nan"),
         "frac_correct_above_0.9": float((conf[correct] >= 0.9).mean()) if correct.any() else float("nan"),
     }
+
+
+def mcnemar_pvalue(correct_a: np.ndarray, correct_b: np.ndarray) -> float:
+    """Exact two-sided McNemar test on paired per-image correctness."""
+    from scipy.stats import binomtest
+
+    b = int(np.sum(correct_a & ~correct_b))
+    c = int(np.sum(~correct_a & correct_b))
+    if b + c == 0:
+        return 1.0
+    return float(binomtest(b, b + c, 0.5).pvalue)
+
+
+def cluster_bootstrap_ci(correct: np.ndarray, groups: np.ndarray, n_boot: int = 1000,
+                         seed: int = 0, alpha: float = 0.05) -> tuple[float, float]:
+    """Bootstrap CI of accuracy, resampling whole groups (blocks of consecutive frames).
+
+    Neighbouring frames are highly correlated, so resampling single images would give
+    intervals that are far too narrow.
+    """
+    rng = np.random.default_rng(seed)
+    uniq, inv = np.unique(groups, return_inverse=True)
+    sums = np.bincount(inv, weights=correct.astype(float))
+    counts = np.bincount(inv).astype(float)
+    accs = np.empty(n_boot)
+    for i in range(n_boot):
+        pick = rng.integers(0, len(uniq), len(uniq))
+        accs[i] = sums[pick].sum() / counts[pick].sum()
+    return float(np.quantile(accs, alpha / 2)), float(np.quantile(accs, 1 - alpha / 2))

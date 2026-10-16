@@ -79,3 +79,13 @@ def test_wordbuilder_hold_does_not_repeat_and_ignores_low_confidence():
     for _ in range(20):
         wb2.update("B", 0.3)
     assert wb2.text == ""
+
+
+def test_mcnemar_and_bootstrap():
+    a = np.array([True] * 90 + [False] * 10)
+    b = np.array([True] * 50 + [False] * 50)
+    assert metrics.mcnemar_pvalue(a, b) < 0.001
+    assert metrics.mcnemar_pvalue(a, a) == 1.0
+    groups = np.repeat(np.arange(10), 10)
+    lo, hi = metrics.cluster_bootstrap_ci(a, groups, n_boot=200)
+    assert lo <= 0.9 <= hi

@@ -1,0 +1,6 @@
+# Extra packages for the demo apps (app/)
+gradio>=4.40
+opencv-python>=4.9
+mediapipe>=0.10.14
+numpy>=1.26
+ai-edge-litert>=1.0  # lightweight TFLite runtime (alternative: full tensorflow)

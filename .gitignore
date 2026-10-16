@@ -1,0 +1,26 @@
+# Dataset and large generated data (download instructions are in the README)
+dataset/
+dataset.zip
+data/
+*.zip
+*.npy
+*.npz
+*.h5
+
+# Trained models are large; selected small ones can be added with `git add -f`
+models/*
+!models/.gitkeep
+
+# Experiment outputs: keep the summary tables / figures, ignore raw run folders
+results/runs/*/checkpoints/
+results/predictions/
+
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.venv/
+venv/
+.pytest_cache/
+.DS_Store
+Thumbs.db
+mlruns/

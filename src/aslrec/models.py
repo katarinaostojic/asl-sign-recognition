@@ -46,7 +46,7 @@ class GraphConv(layers.Layer):
 
     def call(self, x):
         h = keras.ops.matmul(x, self.w)                       # (B, 21, units)
-        h = keras.ops.matmul(keras.ops.convert_to_tensor(self.adj), h)  # aggregate neighbours
+        h = keras.ops.einsum("ij,bjf->bif", keras.ops.convert_to_tensor(self.adj), h)  # neighbours
         return self.activation(h + self.b)
 
     def compute_output_shape(self, input_shape):
@@ -75,7 +75,7 @@ def build_gnn(normalizer: layers.Normalization | None = None, hidden=(64, 64, 32
 
 
 # ------------------------------------------------------------------ image models -------------
-def make_augmenter(rotation=0.08, translation=0.10, zoom=0.15, brightness=0.25, contrast=0.25):
+def make_augmenter(rotation=0.05, translation=0.10, zoom=0.15, brightness=0.25, contrast=0.25):
     """Random augmentation for images in [0, 255]; used inside tf.data (training only)."""
     return keras.Sequential(
         [

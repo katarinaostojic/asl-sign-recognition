@@ -29,12 +29,16 @@ def main():
     ap.add_argument("--split", choices=["block", "random"], default="block")
     ap.add_argument("--block-size", type=int, default=config.BLOCK_SIZE)
     ap.add_argument("--seed", type=int, default=config.SEED)
+    ap.add_argument("--per-class", type=int, help="use only N random images per class (quick experiments)")
     ap.add_argument("--workers", type=int, default=max(1, multiprocessing.cpu_count() - 1))
     args = ap.parse_args()
 
     train_dir = config.find_train_dir(args.dataset)
     print("Dataset:", train_dir)
     df = data.build_index(train_dir)
+    if args.per_class:
+        df = (df.sample(frac=1, random_state=args.seed).groupby("label").head(args.per_class)
+                .sort_values(["label", "idx"]).reset_index(drop=True))
     print(f"{len(df)} images in {df['label'].nunique()} classes")
 
     if args.split == "block":
@@ -55,7 +59,7 @@ def main():
 
 def plot_class_balance(df):
     counts = df.groupby(["class_name", "split"]).size().unstack(fill_value=0)
-    counts = counts.reindex(config.CLASS_NAMES)[["train", "val", "test"]]
+    counts = counts.reindex(index=config.CLASS_NAMES, columns=["train", "val", "test"], fill_value=0).fillna(0)
     ax = counts.plot(kind="bar", stacked=True, figsize=(12, 4))
     ax.set_ylabel("images")
     ax.set_title("Images per class and split")

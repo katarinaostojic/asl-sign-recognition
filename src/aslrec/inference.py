@@ -125,6 +125,14 @@ class LandmarkPipeline:
             detector = HandDetector()
         self.detector = detector
 
+    def predict_with_landmarks(self, rgb: np.ndarray, lm: np.ndarray | None) -> np.ndarray:
+        """Probabilities (29,) for one frame whose landmarks were already detected."""
+        if lm is None:
+            p = np.zeros(config.NUM_CLASSES, dtype=np.float32)
+            p[config.NOTHING_INDEX] = 1.0
+            return p
+        return self.predictor.predict_proba(self.build(lm[None]))[0]
+
     def predict_rgb(self, images: list[np.ndarray]):
         n = len(images)
         probs = np.zeros((n, config.NUM_CLASSES), dtype=np.float32)
@@ -156,6 +164,14 @@ class ImagePipeline:
             detector = HandDetector()
         self.detector = detector
 
+    def predict_with_landmarks(self, rgb: np.ndarray, lm: np.ndarray | None) -> np.ndarray:
+        if lm is None:
+            p = np.zeros(config.NUM_CLASSES, dtype=np.float32)
+            p[config.NOTHING_INDEX] = 1.0
+            return p
+        crop = square_crop_around(rgb, lm) if self.crop_hand else rgb
+        return self.predictor.predict_proba(resize_rgb(crop, self.size)[None].astype(np.float32))[0]
+
     def predict_rgb(self, images: list[np.ndarray]):
         batch, lms = [], np.full((len(images), 21, 3), np.nan, dtype=np.float32)
         detected = np.ones(len(images), dtype=bool)
@@ -170,6 +186,16 @@ class ImagePipeline:
             batch.append(resize_rgb(img, self.size))
         probs = self.predictor.predict_proba(np.stack(batch).astype(np.float32))
         return probs, detected, lms
+
+
+def available_model_names() -> list[str]:
+    """Names of trained models found in models/ (Keras, scikit-learn and TFLite files)."""
+    names = [p.stem for p in config.MODELS_DIR.glob("*.keras")] + \
+            [p.stem for p in config.MODELS_DIR.glob("*.joblib")]
+    tfl = config.MODELS_DIR / "tflite"
+    if tfl.exists():
+        names += [p.stem for p in tfl.glob("*.tflite")]
+    return sorted(names)
 
 
 def build_pipeline(name: str, path=None, detector=None, crop_hand: bool = False):

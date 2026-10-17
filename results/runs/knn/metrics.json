@@ -1,0 +1,8 @@
+{
+  "test_accuracy_on_detected": 0.9177377892030848,
+  "best_val_accuracy": 0.9317443120260022,
+  "test_detected_fraction": 0.8048275862068965,
+  "train_seconds": 0.008999347686767578,
+  "parameters": 464078,
+  "model_file_mb": 1.899606
+}

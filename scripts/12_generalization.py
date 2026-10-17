@@ -42,7 +42,12 @@ def part_a(names, detector, n, seed):
     pick = data.subsample_rows(df, te, max(1, n // config.NUM_CLASSES), seed)
     imgs = [read_rgb(df["path"].iloc[i]) for i in pick]
     y = df["label"].to_numpy()[pick]
-    pipes = {m: inference.build_pipeline(m, detector=detector) for m in names}
+    pipes = {}
+    for m in names:
+        try:
+            pipes[m] = inference.build_pipeline(m, detector=detector)
+        except Exception as e:
+            print(f"skip {m}: {type(e).__name__}: {str(e)[:120]}")
     rows = []
     for pname, fn in robustness.PERTURBATIONS.items():
         prng = np.random.default_rng(seed + 1)
@@ -56,7 +61,7 @@ def part_a(names, detector, n, seed):
     res.to_csv(config.RESULTS_DIR / "robustness.csv", index=False)
     piv = res.pivot(index="model", columns="perturbation", values="accuracy")[list(robustness.PERTURBATIONS)]
     plt.figure(figsize=(13, 0.6 * len(names) + 2))
-    sns.heatmap(piv.loc[names], annot=True, fmt=".2f", cmap="RdYlGn", vmin=0, vmax=1)
+    sns.heatmap(piv.loc[list(pipes)], annot=True, fmt=".2f", cmap="RdYlGn", vmin=0, vmax=1)
     plt.title(f"Accuracy under perturbations ({len(imgs)} test images)")
     plt.tight_layout()
     config.FIGURES_DIR.mkdir(parents=True, exist_ok=True)
@@ -89,7 +94,11 @@ def part_b(names, detector):
         if kind == "image":
             variants.append((f"{m}+handcrop", m, True))
     for label, m, crop in variants:
-        pipe = inference.build_pipeline(m, detector=detector, crop_hand=crop)
+        try:
+            pipe = inference.build_pipeline(m, detector=detector, crop_hand=crop)
+        except Exception as e:
+            print(f"skip {label}: {type(e).__name__}: {str(e)[:120]}")
+            continue
         probs, det, _ = pipe.predict_rgb(imgs)
         pred = probs.argmax(1)
         rows.append({"model": label, "accuracy": float((pred == y).mean()), "hand_detected": float(det.mean()),

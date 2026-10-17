@@ -49,12 +49,18 @@ class KerasPredictor:
 
         from . import models  # noqa: F401  (registers the GraphConv layer)
 
+        import tensorflow as tf
+
         self.model = keras.models.load_model(path, compile=False)
+        # a compiled graph avoids the large per-call overhead of eager execution, which would
+        # otherwise exaggerate the speed-up of TFLite in latency comparisons
+        self._fn = tf.function(lambda t: self.model(t, training=False), reduce_retracing=True)
+        self._tf = tf
 
     def predict_proba(self, x: np.ndarray) -> np.ndarray:
         x = np.asarray(x, dtype=np.float32)
-        if len(x) <= 8:  # faster than .predict() for single samples
-            return np.asarray(self.model(x, training=False))
+        if len(x) <= 8:
+            return self._fn(self._tf.convert_to_tensor(x)).numpy()
         return self.model.predict(x, batch_size=256, verbose=0)
 
 

@@ -1,0 +1,18 @@
+{
+  "time": "2026-10-16T19:20:03+00:00",
+  "model": "gnn",
+  "features": "graph",
+  "name": null,
+  "epochs": 2,
+  "batch_size": 256,
+  "lr": 0.001,
+  "patience": 10,
+  "seed": 42,
+  "quick": true,
+  "hidden": [
+    64,
+    64,
+    32
+  ],
+  "dropout": 0.3
+}

@@ -46,7 +46,11 @@ class GraphConv(layers.Layer):
 
     def call(self, x):
         h = keras.ops.matmul(x, self.w)                       # (B, 21, units)
-        h = keras.ops.einsum("ij,bjf->bif", keras.ops.convert_to_tensor(self.adj), h)  # neighbours
+        # aggregate neighbours: A_hat @ h, written with rank-3 x rank-2 matmuls only
+        # (A_hat is symmetric) because einsum / broadcasting matmul do not export cleanly to TFLite
+        h = keras.ops.transpose(h, (0, 2, 1))                 # (B, units, 21)
+        h = keras.ops.matmul(h, keras.ops.convert_to_tensor(self.adj))
+        h = keras.ops.transpose(h, (0, 2, 1))                 # (B, 21, units)
         return self.activation(h + self.b)
 
     def compute_output_shape(self, input_shape):
@@ -97,10 +101,10 @@ def build_cnn(size=config.IMG_SIZE, blocks=4, base_filters=32, kernel=3, activat
     for i in range(blocks):
         f = base_filters * 2 ** min(i, 3)
         x = layers.Conv2D(f, kernel, padding="same", use_bias=False)(x)
-        x = layers.BatchNormalization()(x)
+        x = layers.BatchNormalization(momentum=0.9)(x)
         x = layers.Activation(activation)(x)
         x = layers.Conv2D(f, kernel, padding="same", use_bias=False)(x)
-        x = layers.BatchNormalization()(x)
+        x = layers.BatchNormalization(momentum=0.9)(x)
         x = layers.Activation(activation, name="last_conv" if i == blocks - 1 else None)(x)
         if i < blocks - 1:
             x = layers.MaxPooling2D(2)(x)

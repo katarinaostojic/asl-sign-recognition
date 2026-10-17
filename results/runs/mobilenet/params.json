@@ -1,0 +1,16 @@
+{
+  "time": "2026-10-16T19:23:50+00:00",
+  "model": "mobilenet",
+  "name": null,
+  "epochs": 2,
+  "batch_size": 128,
+  "lr": 0.001,
+  "patience": 3,
+  "seed": 42,
+  "quick": true,
+  "finetune_epochs": 12,
+  "finetune_lr": 0.0001,
+  "unfreeze": 40,
+  "dropout": 0.3,
+  "no_pretrained": false
+}

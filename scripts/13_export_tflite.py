@@ -109,6 +109,7 @@ def main():
                                 "size_mb": path.stat().st_size / 1e6, "n": len(y_te)})
             except Exception as e:  # keep going: some ops may not convert / quantise
                 print(f"  {name}/{v} failed: {type(e).__name__}: {str(e)[:200]}")
+                path.unlink(missing_ok=True)  # do not leave an unloadable file in models/tflite
                 continue
             print(results[-1])
 

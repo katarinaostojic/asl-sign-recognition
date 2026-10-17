@@ -58,7 +58,11 @@ def main():
     rows.append({"model": "(MediaPipe detection only)", "mean_ms": det_t.mean(),
                  "median_ms": np.median(det_t), "p95_ms": np.percentile(det_t, 95)})
     for name in names:
-        pipe = inference.build_pipeline(name, detector=detector)
+        try:
+            pipe = inference.build_pipeline(name, detector=detector)
+        except Exception as e:
+            print(f"skip {name}: {type(e).__name__}: {str(e)[:120]}")
+            continue
         t = timeit(lambda im: pipe.predict_rgb([im]), imgs)
         rows.append({"model": name, "mean_ms": t.mean(), "median_ms": np.median(t),
                      "p95_ms": np.percentile(t, 95)})
